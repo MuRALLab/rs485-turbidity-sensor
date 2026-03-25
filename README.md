@@ -38,7 +38,7 @@ This project provides an integrated monitoring solution for turbidity and temper
 **RS-ZD-N01-1S-1000-EX** — Turbidity Transmitter
 
 | Specification | Value |
-|---|---|
+| --- | --- |
 | **Output Signal** | RS485 (Modbus RTU) |
 | **Measurement Range** | 0.0 – 1000.0 NTU |
 | **Power Supply** | 10 – 30 V (DC) |
@@ -52,8 +52,8 @@ This project provides an integrated monitoring solution for turbidity and temper
 
 **Cable Configuration:**
 
-- **Cable 1 (Brown):** Positive Supply (+V)
-- **Cable 2 (Black):** Ground (GND)
+- **Cable 1 (Brown):** Power supply positive (10~30V DC)
+- **Cable 2 (Black):** Power supply negative
 - **Cable 3 (Blue):** RS485 Data Line A
 - **Cable 4 (White):** RS485 Data Line B
 
@@ -65,7 +65,7 @@ For more details, refer to the official [Turbidity-transmitter-User-Manual.pdf](
 
 The system is organized into modular, reusable components under the `src/turbidity_monitor` package:
 
-```
+```bash
 src/turbidity_monitor/
 ├── config.py                    # Centralized runtime configuration
 ├── connection/
@@ -248,7 +248,7 @@ All output files are saved in the repository root under `logs/` and `plots/`:
 
 ## Project Structure
 
-```
+```bash
 turbidity_transmitter/
 ├── README.md                           # This file
 ├── pyproject.toml                      # Project metadata & Hatchling build config
@@ -282,4 +282,4 @@ turbidity_transmitter/
 
 ## License
 
-This project is provided as-is for educational and field monitoring purposes under the MIT License. Refer to the sensor manufacturer's documentation for compliance and regulatory requirements.
+This project is provided as-is for educational and field monitoring purposes under the [MIT License](./LICENSE). Refer to the sensor manufacturer's documentation for compliance and regulatory requirements.
