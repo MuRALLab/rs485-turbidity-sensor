@@ -57,6 +57,8 @@ This project provides an integrated monitoring solution for turbidity and temper
 - **Cable 3 (Blue):** RS485 Data Line A
 - **Cable 4 (White):** RS485 Data Line B
 
+![USB-RS485 Adapter Connection](asset/usb-2-rs485_wire_connection.svg "Connect RS485 A/B lines to adapter; adapter connects to PC via USB")
+
 For more details, refer to the official [Turbidity-transmitter-User-Manual.pdf](./Turbidity-transmitter-User-Manual.pdf).
 
 ---
