@@ -1,6 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
 
+# Stable persistent path for the FTDI USB-RS485 adapter (prefer over /dev/ttyUSBx).
+PREFERRED_PORT = "/dev/serial/by-id/usb-FTDI_USB_Serial_Converter_FTB6SPL3-if00-port0"
+
 
 @dataclass(frozen=True)
 class MonitorConfig:
@@ -31,5 +34,11 @@ def logs_dir() -> Path:
 
 def plots_dir() -> Path:
     path = repo_root() / "plots"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def data_log_dir() -> Path:
+    path = repo_root() / "data_log"
     path.mkdir(parents=True, exist_ok=True)
     return path
