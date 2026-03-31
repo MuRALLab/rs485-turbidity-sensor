@@ -5,6 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "turbidity-transmitter"
 version = "0.1.0"
+description = "RS485 turbidity transmitter integration with robust Modbus RTU communication"
 requires-python = ">=3.10"
 dependencies = [
     "pymodbus>=3.12.1",
@@ -12,6 +13,18 @@ dependencies = [
     "matplotlib>=3.8.0",
     "ruff>=0.15.7",
 ]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/turbidity_monitor"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
