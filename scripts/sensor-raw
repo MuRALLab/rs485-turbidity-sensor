@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# sensor-raw — low-level Modbus register read
+#
+# Usage:
+#   sensor-raw [--address <addr>] [--count <n>] [--slave <id>]
+#   sensor-raw -a <addr> -c <n> -s <id>
+#
+# Defaults (from config.sh / MonitorConfig):
+#   address  0
+#   count    2
+#   slave    1
+#
+# The address argument accepts decimal (0, 100) or hex (0x0000).
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/config.sh
+source "${SCRIPT_DIR}/config.sh"
+# shellcheck source=scripts/_common.sh
+source "${SCRIPT_DIR}/_common.sh"
+
+# ── Argument parsing ───────────────────────────────────────────────────────
+ADDR="${SENSOR_REG_ADDRESS}"
+COUNT="${SENSOR_REG_COUNT}"
+SLAVE="${SENSOR_SLAVE_ID}"
+
+usage() {
+    printf "Usage: %s [--address ADDR] [--count N] [--slave ID]\n" \
+        "$(basename "$0")"
+    printf "  -a, --address  Register address, decimal or hex (default: %s)\n" "${SENSOR_REG_ADDRESS}"
+    printf "  -c, --count    Number of registers to read, 1-125 (default: %s)\n" "${SENSOR_REG_COUNT}"
+    printf "  -s, --slave    Modbus slave ID (default: %s)\n" "${SENSOR_SLAVE_ID}"
+    exit 1
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -a|--address) ADDR="$2";  shift 2 ;;
+        -c|--count)   COUNT="$2"; shift 2 ;;
+        -s|--slave)   SLAVE="$2"; shift 2 ;;
+        -h|--help)    usage ;;
+        *) fail "Unknown argument: $1"; usage ;;
+    esac
+done
+
+# ── Header ─────────────────────────────────────────────────────────────────
+printf '%s%s╔═════════════════════════════════════════════════╗%s\n' "${C_BOLD}" "${C_CYAN}" "${C_RESET}"
+printf '%s%s║      RS485 Turbidity Sensor — Raw Read           ║%s\n' "${C_BOLD}" "${C_CYAN}" "${C_RESET}"
+printf '%s%s╚═════════════════════════════════════════════════╝%s\n' "${C_BOLD}" "${C_CYAN}" "${C_RESET}"
+printf '  %s%s%s\n' "${C_DIM}" "$(date '+%Y-%m-%d %H:%M:%S %Z')" "${C_RESET}"
+
+section "Parameters"
+kv "register address" "${ADDR}"
+kv "register count"   "${COUNT}"
+kv "slave ID"         "${SLAVE}"
+kv "baudrate"         "${SENSOR_BAUDRATE}"
+
+# ── Device accessibility ───────────────────────────────────────────────────
+section "Device Check"
+
+active_port=$(assert_device_accessible) || exit 1
+ok "Device accessible: ${active_port}"
+
+# ── Raw read via Python backend ────────────────────────────────────────────
+section "Register Read"
+
+raw_output=$("${PYTHON}" "${PY_DIR}/raw_read.py" "${ADDR}" "${COUNT}" "${SLAVE}" 2>&1) || true
+raw_exit=$?
+
+error_line=$(echo "${raw_output}" | grep "^ERROR:" | head -1 || true)
+
+if [[ ${raw_exit} -eq 0 && -z "${error_line}" ]]; then
+    # Print each REG[x] line with formatting
+    while IFS= read -r line; do
+        if [[ "${line}" == REG\[* ]]; then
+            reg_idx=$(echo "${line}" | grep -oP 'REG\[\K[0-9]+')
+            dec=$(echo "${line}" | grep -oP 'DEC=\K[0-9]+')
+            hex=$(echo "${line}" | grep -oP 'HEX=\K0x[0-9A-Fa-f]+')
+            scaled=$(echo "${line}" | grep -oP 'SCALED=\K[0-9.]+')
+            printf '  %sRegister %-4s%s  dec=%-6s  hex=%-8s  scaled=%s\n' \
+                "${C_BOLD}" "${reg_idx}" "${C_RESET}" "${dec}" "${hex}" "${scaled}"
+        elif [[ "${line}" == PORT:* ]]; then
+            kv "port resolved" "${line#PORT: }"
+        elif [[ "${line}" == REGISTER_COUNT:* ]]; then
+            kv "registers read" "${line#REGISTER_COUNT: }"
+        fi
+    done <<< "${raw_output}"
+    section "Result"
+    printf '  %s%sSUCCESS%s\n\n' "${C_GREEN}" "${C_BOLD}" "${C_RESET}"
+    exit 0
+else
+    err_detail="${error_line#ERROR: }"
+    err_detail="${err_detail:-unknown}"
+    fail "Raw read failed: ${err_detail}"
+    section "Result"
+    printf '  %s%sFAILED%s\n\n' "${C_RED}" "${C_BOLD}" "${C_RESET}"
+    exit 1
+fi
